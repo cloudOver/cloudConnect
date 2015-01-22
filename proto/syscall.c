@@ -26,6 +26,7 @@ struct co_syscall_context* co_syscall_initialize(void *sock) {
 
 
 void co_syscall_execute(struct co_syscall_context *ctx) {
+    lock_and_log("syscall_execute", &ctx->lock);
     syslog(LOG_INFO, "co_syscall_execute: executing syscall %d", ctx->syscall->syscall_num);
     ctx->syscall->ret_code = syscall(ctx->syscall->syscall_num,
                                      ctx->syscall->param[0],
@@ -35,10 +36,12 @@ void co_syscall_execute(struct co_syscall_context *ctx) {
                                      ctx->syscall->param[4],
                                      ctx->syscall->param[5]);
     syslog(LOG_DEBUG, "co_syscall_execute: \treturned %d", ctx->syscall->ret_code);
+    unlock_and_log("syscall_execute", &ctx->lock);
 }
 
 
 void co_syscall_serialize(struct co_syscall_context *ctx) {
+    lock_and_log("syscall_serialize", &ctx->lock);
     syslog(LOG_INFO, "co_syscall_serialize: serializing syscall %d", ctx->syscall_id);
 
     zmq_send(ctx->socket, (void *)ctx->syscall, sizeof(struct co_syscall_data), 0);
@@ -56,19 +59,27 @@ void co_syscall_serialize(struct co_syscall_context *ctx) {
             ctx->syscall->param[i] = NULL;
         }
     }
+    unlock_and_log("syscall_serialize", &ctx->lock);
 }
 
+
 void co_syscall_deserialize(struct co_syscall_context *ctx) {
+    lock_and_log("syscall_deserialize", &ctx->lock);
     ctx->syscall_id += 1;
 
     zmq_recv(ctx->socket, (void *)ctx->syscall, sizeof(struct co_syscall_data), 0);
+    syslog(LOG_DEBUG, "co_syscall_deserialize: received syscall: %d", ctx->syscall->syscall_num);
+
     for (int i = 0; i < CO_PARAM_COUNT; i++) {
         if (ctx->syscall->param_mode[i] != CO_PARAM_VALUE) {
+            syslog(LOG_DEBUG, "co_syscall_serialize: \tallocating memory for param %d (%d bytes)", i, ctx->syscall->param_size[i]);
             ctx->syscall->param[i] = (unsigned long) malloc(ctx->syscall->param_size[i]);
         }
 
         if (ctx->syscall->param_mode[i] == CO_PARAM_WRITE || ctx->syscall->param_mode[i] == CO_PARAM_BOTH) {
+            syslog(LOG_DEBUG, "co_syscall_serialize: \treceiving parameter %d", i);
             zmq_recv(ctx->socket, (void *)ctx->syscall->param[i], ctx->syscall->param_size[i], 0);
         }
     }
+    unlock_and_log("syscall_deserialize", &ctx->lock);
 }

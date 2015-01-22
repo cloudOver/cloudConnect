@@ -4,9 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core
-
-QT       -= gui
+QT       -= gui core
 
 TARGET = CloudClient
 CONFIG   += console
@@ -15,14 +13,12 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 INCLUDEPATH += /usr/local/include/
-
+LIBS += -L/usr/local/lib/ -lzmq
 SOURCES += main.cpp \
-    syscall.cpp \
     proto/syscall.c \
     log.c
 
 HEADERS += \
-    syscall.h \
     proto/request.h \
     proto/syscall.h \
     log.h

@@ -47,24 +47,24 @@ struct co_syscall_context {
  * @param sock - zmq socket for system calls
  * @return
  */
-struct co_syscall_context* co_syscall_initialize(void *sock);
+extern struct co_syscall_context* co_syscall_initialize(void *sock);
 
 /**
  * @brief co_syscall_execute - Execute fetched system call
  * @param ctx - co_syscall_context object. Handles pointer to socket and systemcall mutex
  */
-void co_syscall_execute(struct co_syscall_context *ctx);
+extern void co_syscall_execute(struct co_syscall_context *ctx);
 
 /**
  * @brief co_syscall_serialize - Serialize executed system call. This function puts whole struct co_syscall_data and required parameters (for READ direction)
  * @param ctx - co_syscall_context object. Handles pointer to socket and systemcall mutex
  */
-void co_syscall_serialize(struct co_syscall_context *ctx);
+extern void co_syscall_serialize(struct co_syscall_context *ctx);
 
 /**
  * @brief co_syscall_deserialize - Unpack system call dara and all params form socket (with direction WRITE or BOTH)
  * @param ctx - co_syscall_context object. Handles pointer to socket and systemcall mutex
  */
-void co_syscall_deserialize(struct co_syscall_context *ctx);
+extern void co_syscall_deserialize(struct co_syscall_context *ctx);
 
 #endif // SYSCALL_H
