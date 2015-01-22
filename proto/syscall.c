@@ -24,6 +24,13 @@ struct co_syscall_context* co_syscall_initialize(void *sock) {
     return 0;
 }
 
+void co_syscall_cleanup(co_syscall_context *ctx) {
+    syslog(LOG_INFO, "co_syscall_cleanup: freeing ctx structure");
+    pthread_mutex_destroy(&ctx->lock);
+    free(ctx->syscall);
+    free(ctx);
+}
+
 
 void co_syscall_execute(struct co_syscall_context *ctx) {
     lock_and_log("syscall_execute", &ctx->lock);

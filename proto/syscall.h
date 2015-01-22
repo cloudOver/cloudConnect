@@ -42,15 +42,21 @@ struct co_syscall_context {
 };
 
 /**
- * @brief co_syscall_initialize - Initialize remote system calls subsystem
- * @param sock - zmq socket for system calls
- * @return
+ * @brief co_syscall_initialize Initialize remote system calls subsystem
+ * @param sock Zmq socket for system calls
+ * @return Returns new context structure
  */
 extern struct co_syscall_context* co_syscall_initialize(void *sock);
 
 /**
- * @brief co_syscall_execute - Execute fetched system call
- * @param ctx - co_syscall_context object. Handles pointer to socket and systemcall mutex
+ * @brief co_syscall_cleanup
+ * @param ctx
+ */
+void co_syscall_cleanup(struct co_syscall_context *ctx);
+
+/**
+ * @brief co_syscall_execute Execute fetched system call
+ * @param ctx The co_syscall_context object. Handles pointer to socket and systemcall mutex
  */
 extern void co_syscall_execute(struct co_syscall_context *ctx);
 
