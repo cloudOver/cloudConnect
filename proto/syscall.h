@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <zmq_utils.h>
 
 #define CO_PARAM_COUNT 6
 

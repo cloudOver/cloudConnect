@@ -16,9 +16,10 @@ INCLUDEPATH += /usr/local/include/
 LIBS += -L/usr/local/lib/ -lzmq
 SOURCES += main.cpp \
     proto/syscall.c \
-    log.c
+    log.c \
+    proto/file.c
 
 HEADERS += \
-    proto/request.h \
     proto/syscall.h \
-    log.h
+    log.h \
+    proto/file.h
