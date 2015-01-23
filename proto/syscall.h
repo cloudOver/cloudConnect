@@ -35,7 +35,7 @@ struct co_syscall_data {
 };
 
 struct co_syscall_context {
-    void *socket;
+    int fifo_fd;
     pthread_mutex_t lock;
     long syscall_id;
     struct co_syscall_data *syscall;
@@ -46,7 +46,7 @@ struct co_syscall_context {
  * @param sock Zmq socket for system calls
  * @return Returns new context structure
  */
-extern struct co_syscall_context* co_syscall_initialize(void *sock);
+extern struct co_syscall_context* co_syscall_initialize(char *path);
 
 /**
  * @brief co_syscall_cleanup

@@ -15,7 +15,7 @@ struct co_file_data {
 };
 
 struct co_file_context {
-    void *socket;
+    int fifo_fd;
     pthread_mutex_t lock;
     struct co_file_data *file;
 };
@@ -25,7 +25,7 @@ struct co_file_context {
  * @param socket Socket used for file transfers
  * @return New co_file_context object
  */
-extern struct co_file_context *co_file_initialize(void *socket);
+extern struct co_file_context *co_file_initialize(char *path);
 
 /**
  * @brief co_file_cleanup Cleanup co_file_context structure
@@ -34,14 +34,15 @@ extern struct co_file_context *co_file_initialize(void *socket);
 extern void co_file_cleanup(struct co_file_context *ctx);
 
 /**
- * @brief co_file_retreive Retreive part of file identified by co_file_data structure. Function could not be
- * executed in parallel with system calls due to lseeks in files!
+ * @brief co_file_retreive Remote process wants to retreive part of file identified
+ * by co_file_data structure. Function could not be executed in parallel with system
+ * calls due to lseeks in files!
  * @param ctx Context object
  */
 extern void co_file_retreive(struct co_file_context *ctx);
 
 /**
- * @brief co_file_save Save part of file identified by co_file_data
+ * @brief co_file_save Remote process wants to save file contents on local disk
  * @param ctx
  */
 extern void co_file_save(struct co_file_context *ctx);
