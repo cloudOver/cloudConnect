@@ -39,4 +39,11 @@ extern void co_file_cleanup(struct co_file_context *ctx);
  * @param ctx Context object
  */
 extern void co_file_retreive(struct co_file_context *ctx);
+
+/**
+ * @brief co_file_save Save part of file identified by co_file_data
+ * @param ctx
+ */
+extern void co_file_save(struct co_file_context *ctx);
+
 #endif // FILE_H

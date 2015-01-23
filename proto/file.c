@@ -1,6 +1,5 @@
 #include "file.h"
 
-
 struct co_file_context *co_file_initialize(void *socket) {
     struct co_file_context *ctx = (struct co_file_context*) malloc(sizeof(struct co_file_context));
     if (ctx == NULL) {
@@ -44,7 +43,22 @@ void co_file_retreive(struct co_file_context *ctx) {
     long len = read(ctx->file->fd, data, ctx->file->length);
     lseek(ctx->file->fd, pos, SEEK_SET);
 
-    zmq_send(ctx->socket, data, len, 0);
+    zmq_send(ctx->socket, data, ctx->file->length, 0);
+
+    unlock_and_log("file_retreive", &ctx->lock);
+}
+
+void co_file_save(struct co_file_context *ctx) {
+    lock_and_log("file_retreive", &ctx->lock);
+    zmq_recv(ctx->socket, (void*)ctx->file, sizeof(struct co_file_data), 0);
+
+    void *data = malloc(ctx->file->length);
+    zmq_recv(ctx->socket, data, ctx->file->length, 0);
+
+    long pos = lseek(ctx->file->fd, 0, SEEK_CUR);
+    lseek(ctx->file->fd, ctx->file->offset, SEEK_SET);
+    long len = write(ctx->file->fd, data, ctx->file->length);
+    lseek(ctx->file->fd, pos, SEEK_SET);
 
     unlock_and_log("file_retreive", &ctx->lock);
 }
