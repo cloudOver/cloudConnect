@@ -14,12 +14,15 @@ TEMPLATE = app
 
 INCLUDEPATH += /usr/local/include/
 LIBS += -L/usr/local/lib/ -lzmq
-SOURCES += main.cpp \
+SOURCES += \
     proto/syscall.c \
     log.c \
-    proto/file.c
+    proto/file.c \
+    main.c \
+    router.c
 
 HEADERS += \
     proto/syscall.h \
     log.h \
-    proto/file.h
+    proto/file.h \
+    router.h
