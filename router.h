@@ -16,7 +16,7 @@ struct router_context {
 };
 
 struct router_context* router_init(int syscall_port, int file_port);
-void start_router();
+void router_start();
 void router_cleanup(router_context *ctx);
 
 #endif // ROUTER_H
