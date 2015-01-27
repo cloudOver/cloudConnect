@@ -3,6 +3,7 @@
 
 #include <log.h>
 #include <zmq.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>

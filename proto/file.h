@@ -7,6 +7,11 @@
 #include <zmq.h>
 #include <log.h>
 
+enum co_file_direction {
+    CO_FILEDIR_RETR,
+    CO_FILEDIR_SAVE,
+};
+
 struct co_file_data {
     int fd;
     long offset;

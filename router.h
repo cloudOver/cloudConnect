@@ -5,7 +5,12 @@
 #include <zmq.h>
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>
 
+
+struct router_route {
+    long pid;
+};
 
 struct router_context {
     void *syscall_context;
@@ -16,7 +21,7 @@ struct router_context {
 };
 
 struct router_context* router_init(int syscall_port, int file_port);
-void start_router();
-void router_cleanup(router_context *ctx);
+void router_start(struct router_context *ctx);
+void router_cleanup(struct router_context *ctx);
 
 #endif // ROUTER_H

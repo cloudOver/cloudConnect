@@ -24,7 +24,7 @@ struct co_syscall_context* co_syscall_initialize(char *path) {
     return 0;
 }
 
-void co_syscall_cleanup(co_syscall_context *ctx) {
+void co_syscall_cleanup(struct co_syscall_context *ctx) {
     syslog(LOG_INFO, "co_syscall_cleanup: freeing ctx structure");
     pthread_mutex_destroy(&ctx->lock);
     free(ctx->syscall);
