@@ -13,6 +13,7 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 INCLUDEPATH += /usr/local/include/
+
 LIBS += -L/usr/local/lib/ -lzmq
 SOURCES += \
     proto/syscall.c \
@@ -25,4 +26,5 @@ HEADERS += \
     proto/syscall.h \
     log.h \
     proto/file.h \
-    router.h
+    router.h \
+    kvec.h
