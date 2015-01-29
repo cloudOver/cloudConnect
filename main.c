@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (strcmp(argv[1], "router") == 0) {
-        struct router_context *ctx = router_init(3313, 3323);
+        struct router_context *ctx = router_initialize(3313, 3323);
 
 
     } else if (strcmp(argv[1], "plug") == 0) {

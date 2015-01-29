@@ -12,9 +12,9 @@ CONFIG   -= app_bundle
 
 TEMPLATE = app
 
-INCLUDEPATH += /usr/local/include/
+INCLUDEPATH += /usr/local/include/ /usr/local/include/glib-2.0/ /usr/local/lib/glib-2.0/include/
 
-LIBS += -L/usr/local/lib/ -lzmq
+LIBS += -L/usr/local/lib/ -lzmq -lm -lglib-2.0
 SOURCES += \
     proto/syscall.c \
     log.c \

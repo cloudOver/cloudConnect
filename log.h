@@ -14,12 +14,12 @@ void co_log_init();
  * @param log_msg - Message which will be shown in logs, when mutex is locked
  * @param mutex - pointer to phread mutex object
  */
-void lock_and_log(char *log_msg, pthread_mutex_t *mutex);
+void lock_and_log(char *lock_name, pthread_mutex_t *mutex);
 
 /**
  * @brief unlock_and_log - Unlock mutex and log this fact
  * @param log_msg - Message which will be shown in logs, when mutex is unlocked
  * @param mutex - pointer to phread mutex object
  */
-void unlock_and_log(char *log_msg, pthread_mutex_t *mutex);
+void unlock_and_log(char *lock_name, pthread_mutex_t *mutex);
 #endif // LOG_H

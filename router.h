@@ -3,30 +3,39 @@
 
 #include <log.h>
 #include <zmq.h>
-#include <gli.h>
+#include <glib.h>
 
 #include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
 
+#include <proto/file.h>
+#include <proto/syscall.h>
+
 
 struct router_route {
     long pid;
 };
 
-struct router_context {
+struct router_process {
+    long pid;
+
     void *syscall_context;
     void *syscall_socket;
-    kvec_t(void *) syscall_ctx_list;
-    kvec_t(void *) syscall_sock_list;
-    pthread_mutex_t syscall_lock;
 
     void *file_context;
     void *file_socket;
-    kvec_t(void *) file_ctx_list;
-    kvec_t(void *) file_sock_list;
-    pthread_mutex_t file_lock;
+};
+
+struct router_context {
+    void *syscall_context;
+    void *syscall_socket;
+    void *file_context;
+    void *file_socket;
+
+    GList *process_list;
+    pthread_mutex_t process_list_lock;
 };
 
 struct router_context* router_initialize(int syscall_port, int file_port);
