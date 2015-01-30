@@ -70,7 +70,7 @@ struct router_context* router_initialize(int syscall_port, int file_port);
  * @brief router_start
  * @param ctx
  */
-void router_file(struct router_context *ctx);
+void router_start(struct router_context *ctx);
 
 /**
  * @brief router_cleanup Cleanup context structure and close router

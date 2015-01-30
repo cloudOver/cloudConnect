@@ -97,6 +97,58 @@ void router_file(struct router_context *ctx) {
     zmq_ctx_new();
 }
 
-void router_syscall(struct router_context *ctx) {
+static void router_forward_to_proc(void *src_sock, void *dest_sock) {
+    // Forward one message from peer router to process
+    syslog(LOG_DEBUG, "router_forward_msg: \tforwarding message to pid %d", route_data->pid);
+    zmq_msg_t msg;
+    zmq_msg_init(&msg);
+    zmq_recvmsg(src_sock, &msg, 0);
+    zmq_sendmsg(dest_sock, &msg, 0);
+}
 
+static void router_forward_from_proc(void *dest_sock, int pid) {
+    syslog(LOG_DEBUG, "router_file: received message from pid %d", ((struct router_process*)l->data)->pid);
+    zmq_msg_init(&msg);
+    zmq_msg_init_size(&back_route, sizeof(struct router_route));
+
+    route_data = zmq_msg_data(&back_route);
+    route_data->pid = pid;
+    zmq_sendmsg(dest_sock, &back_route, 0);
+    zmq_sendmsg(dest_sock, &msg, 0);
+}
+
+void router_syscall(struct router_context *ctx) {
+    zmq_msg_t route;
+    struct router_route *route_data;
+    char pipe_path[256];
+    int ret;
+    GList *l;
+
+    // Forward messages from peer router
+    zmq_msg_init(&route);
+
+    ret = zmq_recvmsg(ctx->file_socket, &route, ZMQ_NOBLOCK);
+    lock_and_log("process_list_lock", &ctx->process_list_lock);
+    if (ret == 0) {
+        syslog(LOG_DEBUG, "router_file: received message from peer router");
+        route_data = zmq_msg_data(&route);
+        for (l = ctx->process_list; l != NULL; l = l->next) {
+            if (((struct router_process*)l->data)->pid == route_data->pid) {
+                router_forward_to_proc(ctx->file_socket, ((struct router_process*)l->data)->file_socket);
+                break;
+            }
+        }
+    }
+
+    // Forward messages from running processes
+    for (l = ctx->process_list; l != NULL; l = l->next) {
+        zmq_msg_t msg, back_route;
+        ret = zmq_recvmsg(((struct router_process*)l->data)->file_socket, &msg, ZMQ_NOBLOCK);
+        if (ret == 0) {
+            router_forward_from_proc(ctx->file_socket, ((struct router_process*)l->data)->pid);
+        }
+    }
+    lock_and_log("process_list_lock", &ctx->process_list_lock);
+
+    zmq_ctx_new();
 }
