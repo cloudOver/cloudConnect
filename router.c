@@ -7,6 +7,8 @@ struct router_context* router_initialize(int syscall_port, int file_port) {
         return NULL;
     }
 
+    ctx->running = 1;
+
     ctx->syscall_context = zmq_ctx_new();
     ctx->syscall_socket = zmq_socket(ctx->syscall_context, ZMQ_PAIR);
     char syscall_port_str[256];
@@ -95,6 +97,6 @@ void router_file(struct router_context *ctx) {
     zmq_ctx_new();
 }
 
-void router_syscall_start(struct router_context *ctx) {
+void router_syscall(struct router_context *ctx) {
 
 }
