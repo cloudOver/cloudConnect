@@ -10,7 +10,6 @@
 
 #include <proto/syscall.h>
 #include <proto/file.h>
-
 #include <router.h>
 
 int i_am_running = 1;
@@ -36,9 +35,33 @@ int main(int argc, char *argv[]) {
     }
 
     if (strcmp(argv[1], "router") == 0) {
+        void *mgmt_ctx = zmq_ctx_new();
+        void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PULL);
+        zmq_bind(mgmt_sock, "ipc:///tmp/co_mgmt");
+
         struct router_context *ctx = router_initialize(3313, 3323);
+        while (i_am_running) {
+            zmq_msg_t msg;
+            int ret = 0;
+            struct router_mgmt *msg_data;
 
+            // Forward messages
+            router_start(ctx);
 
+            // Check for new processes
+            zmq_msg_init(&msg);
+            ret = zmq_recvmsg(mgmt_sock, &msg, ZMQ_NOBLOCK);
+            if (ret == 0) {
+                msg_data = (long*) zmq_msg_data(&msg);
+                if (msg_data->action == MGMT_CREATE) {
+                    lock_and_log("router_mgmt", &ctx->process_list_lock);
+                    struct router_process *process = router_process_init(msg_data->pid);
+                }
+            }
+        }
+        zmq_close(mgmt_sock);
+        zmq_ctx_destroy(mgmt_ctx);
+        router_cleanup(ctx);
     } else if (strcmp(argv[1], "plug") == 0) {
         pid_t pid = getpid();
         char path[] = "/var/lib/cloudOver/pipes/";

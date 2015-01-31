@@ -1,13 +1,30 @@
 #include "router.h"
 
+struct router_process *router_process_init(long pid) {
+    struct router_process* process = malloc(sizeof(struct router_process));
+    process->file_context = zmq_ctx_new();
+    process->syscall_context = zmq_ctx_new();
+
+    process->file_socket = zmq_socket(process->file_context, ZMQ_PAIR);
+    process->syscall_socket = zmq_socket(process->syscall_context, ZMQ_PAIR);
+
+    return process;
+}
+
+void router_process_cleanup(struct router_process *process) {
+    zmq_close(process->file_socket);
+    zmq_close(process->syscall_socket);
+    zmq_ctx_destroy(process->file_context);
+    zmq_ctx_destroy(process->syscall_socket);
+    free((void *)process);
+}
+
 struct router_context* router_initialize(int syscall_port, int file_port) {
     struct router_context *ctx = (struct router_context*)malloc(sizeof(struct router_context));
     if (ctx == NULL) {
         syslog(LOG_CRIT, "router_init: cannot allocate memory");
         return NULL;
     }
-
-    ctx->running = 1;
 
     ctx->syscall_context = zmq_ctx_new();
     ctx->syscall_socket = zmq_socket(ctx->syscall_context, ZMQ_PAIR);
@@ -48,107 +65,127 @@ void router_cleanup(struct router_context *ctx) {
     free(ctx);
 }
 
-void router_file(struct router_context *ctx) {
-    zmq_msg_t route;
-    struct router_route *route_data;
-    char pipe_path[256];
-    int ret;
-    GList *l;
-
-    // Forward messages from peer router
-    zmq_msg_init(&route);
-
-    ret = zmq_recvmsg(ctx->file_socket, &route, ZMQ_NOBLOCK);
-    lock_and_log("process_list_lock", &ctx->process_list_lock);
-    if (ret == 0) {
-        syslog(LOG_DEBUG, "router_file: received message from peer router");
-        route_data = zmq_msg_data(&route);
-        for (l = ctx->process_list; l != NULL; l = l->next) {
-            if (((struct router_process*)l->data)->pid == route_data->pid) {
-                syslog(LOG_DEBUG, "router_file: \tforwarding message to pid %d", route_data->pid);
-                zmq_msg_t msg;
-
-                zmq_msg_init(&msg);
-                zmq_recvmsg(ctx->file_socket, &msg, 0);
-                zmq_sendmsg(((struct router_process*)l->data)->file_socket, &msg, 0);
-
-                break;
-            }
-        }
-    }
-
-    // Forward messages from running processes
-    for (l = ctx->process_list; l != NULL; l = l->next) {
-        zmq_msg_t msg, back_route;
-        ret = zmq_recvmsg(((struct router_process*)l->data)->file_socket, &msg, ZMQ_NOBLOCK);
-        if (ret == 0) {
-            syslog(LOG_DEBUG, "router_file: received message from pid %d", ((struct router_process*)l->data)->pid);
-            zmq_msg_init(&msg);
-            zmq_msg_init_size(&back_route, sizeof(struct router_route));
-
-            route_data = zmq_msg_data(&back_route);
-            route_data->pid = ((struct router_process*)l->data)->pid;
-            zmq_sendmsg(ctx->file_socket, &back_route, 0);
-            zmq_sendmsg(ctx->file_socket, &msg, 0);
-        }
-    }
-    lock_and_log("process_list_lock", &ctx->process_list_lock);
-
-    zmq_ctx_new();
-}
 
 static void router_forward_to_proc(void *src_sock, void *dest_sock) {
     // Forward one message from peer router to process
-    syslog(LOG_DEBUG, "router_forward_msg: \tforwarding message to pid %d", route_data->pid);
     zmq_msg_t msg;
     zmq_msg_init(&msg);
     zmq_recvmsg(src_sock, &msg, 0);
     zmq_sendmsg(dest_sock, &msg, 0);
 }
 
-static void router_forward_from_proc(void *dest_sock, int pid) {
-    syslog(LOG_DEBUG, "router_file: received message from pid %d", ((struct router_process*)l->data)->pid);
-    zmq_msg_init(&msg);
-    zmq_msg_init_size(&back_route, sizeof(struct router_route));
 
+static void router_forward_from_proc(void *dest_sock, zmq_msg_t *msg, int pid) {
+    zmq_msg_t back_route;
+    struct router_route *route_data;
+
+    zmq_msg_init_size(&back_route, sizeof(struct router_route));
     route_data = zmq_msg_data(&back_route);
     route_data->pid = pid;
     zmq_sendmsg(dest_sock, &back_route, 0);
     zmq_sendmsg(dest_sock, &msg, 0);
 }
 
-void router_syscall(struct router_context *ctx) {
+
+static int router_file(struct router_context *ctx) {
     zmq_msg_t route;
     struct router_route *route_data;
     char pipe_path[256];
-    int ret;
+    int ret, forwarded = 0;
     GList *l;
+
+    lock_and_log("process_list_lock", &ctx->process_list_lock);
 
     // Forward messages from peer router
     zmq_msg_init(&route);
-
     ret = zmq_recvmsg(ctx->file_socket, &route, ZMQ_NOBLOCK);
-    lock_and_log("process_list_lock", &ctx->process_list_lock);
+
     if (ret == 0) {
         syslog(LOG_DEBUG, "router_file: received message from peer router");
         route_data = zmq_msg_data(&route);
         for (l = ctx->process_list; l != NULL; l = l->next) {
             if (((struct router_process*)l->data)->pid == route_data->pid) {
+                syslog(LOG_DEBUG, "router_forward_msg: \tforwarding message to pid %d", route_data->pid);
                 router_forward_to_proc(ctx->file_socket, ((struct router_process*)l->data)->file_socket);
+                forwarded += 1;
                 break;
             }
         }
+
+        if (forwarded == 0)
+            syslog(LOG_WARNING, "router_syscall: pid not found");
     }
 
     // Forward messages from running processes
     for (l = ctx->process_list; l != NULL; l = l->next) {
-        zmq_msg_t msg, back_route;
+        zmq_msg_t msg;
+        zmq_msg_init(&msg);
         ret = zmq_recvmsg(((struct router_process*)l->data)->file_socket, &msg, ZMQ_NOBLOCK);
+
         if (ret == 0) {
-            router_forward_from_proc(ctx->file_socket, ((struct router_process*)l->data)->pid);
+            syslog(LOG_DEBUG, "router_file: received message from pid %d", ((struct router_process*)l->data)->pid);
+            router_forward_from_proc(ctx->file_socket, &msg, ((struct router_process*)l->data)->pid);
+            forwarded += 1;
         }
     }
+
+    unlock_and_log("process_list_lock", &ctx->process_list_lock);
+    return forwarded;
+}
+
+static int router_syscall(struct router_context *ctx) {
+    zmq_msg_t route;
+    struct router_route *route_data;
+    char pipe_path[256];
+    int ret, forwarded = 0;
+    GList *l;
+
     lock_and_log("process_list_lock", &ctx->process_list_lock);
 
-    zmq_ctx_new();
+    // Forward messages from peer router
+    zmq_msg_init(&route);
+    ret = zmq_recvmsg(ctx->syscall_socket, &route, ZMQ_NOBLOCK);
+
+    if (ret == 0) {
+        syslog(LOG_DEBUG, "router_syscall: received message from peer router");
+        route_data = zmq_msg_data(&route);
+        for (l = ctx->process_list; l != NULL; l = l->next) {
+            if (((struct router_process*)l->data)->pid == route_data->pid) {
+                syslog(LOG_DEBUG, "router_forward_msg: \tforwarding message to pid %d", route_data->pid);
+                router_forward_to_proc(ctx->syscall_socket, ((struct router_process*)l->data)->syscall_socket);
+                forwarded += 1;
+                break;
+            }
+        }
+
+        if (forwarded == 0)
+            syslog(LOG_WARNING, "router_syscall: pid not found");
+    }
+
+    // Forward messages from running processes
+    for (l = ctx->process_list; l != NULL; l = l->next) {
+        zmq_msg_t msg;
+        zmq_msg_init(&msg);
+        ret = zmq_recvmsg(((struct router_process*)l->data)->syscall_socket, &msg, ZMQ_NOBLOCK);
+
+        if (ret == 0) {
+            syslog(LOG_DEBUG, "router_syscall: received message from pid %d", ((struct router_process*)l->data)->pid);
+            router_forward_from_proc(ctx->syscall_socket, &msg, ((struct router_process*)l->data)->pid);
+            forwarded += 1;
+        }
+    }
+
+    unlock_and_log("process_list_lock", &ctx->process_list_lock);
+    return forwarded;
+}
+
+
+void router_start(struct router_context *ctx) {
+    int messages = 0;
+    messages += router_syscall(ctx);
+    messages += router_file(ctx);
+    if (messages == 0) {
+        syslog(LOG_DEBUG, "router_start: no messages. sleeping");
+        usleep(10000);
+    }
 }
