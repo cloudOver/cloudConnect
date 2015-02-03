@@ -14,8 +14,8 @@
 
 int i_am_running = 1;
 
-void print_help() {
-    fprintf(stderr, "Usage: %s [router|plug]");
+void print_help(char *prog_name) {
+    fprintf(stderr, "Usage: %s [router|plug]", prog_name);
 }
 
 void handle_router_sigterm(int signum) {
@@ -29,8 +29,8 @@ void handle_plug_sigterm(int signum) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        print_help();
+    if (argc < 2) {
+        print_help(argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -52,10 +52,11 @@ int main(int argc, char *argv[]) {
             zmq_msg_init(&msg);
             ret = zmq_recvmsg(mgmt_sock, &msg, ZMQ_NOBLOCK);
             if (ret == 0) {
-                msg_data = (long*) zmq_msg_data(&msg);
+                msg_data = zmq_msg_data(&msg);
                 if (msg_data->action == MGMT_CREATE) {
                     lock_and_log("router_mgmt", &ctx->process_list_lock);
                     struct router_process *process = router_process_init(msg_data->pid);
+                    g_list_append(ctx->process_list, &process);
                 }
             }
         }
@@ -64,40 +65,20 @@ int main(int argc, char *argv[]) {
         router_cleanup(ctx);
     } else if (strcmp(argv[1], "plug") == 0) {
         pid_t pid = getpid();
-        char path[] = "/var/lib/cloudOver/pipes/";
-        char syscall_pipe_path[256];
-        char file_pipe_path[256];
-        sprintf(syscall_pipe_path, "%s/%d_syscall", path, (int)pid);
-        sprintf(file_pipe_path, "%s/%d_file", path, (int)pid);
+        char path[] = "/tmp/pipies";
+        char syscall_path[256];
+        char file_path[256];
+        sprintf(syscall_path, "%s/%d_syscall", path, (int)pid);
+        sprintf(file_path, "%s/%d_file", path, (int)pid);
 
-        int fd;
-        if (access(syscall_pipe_path, F_OK) == 0) {
-            syslog(LOG_ERR, "main: pipe %s exists", syscall_pipe_path);
-            close(fd);
-            exit(1);
-        }
-        if (access(file_pipe_path, F_OK) == 0) {
-            syslog(LOG_ERR, "main: pipe %s exists", file_pipe_path);
-            exit(1);
-        }
 
-        if (mkfifo(syscall_pipe_path, 0770) != 0) {
-            syslog(LOG_ERR, "main: cannot create pipe %s", syscall_pipe_path);
-            exit(1);
-        }
-
-        if (mkfifo(file_pipe_path, 0770) != 0) {
-            syslog(LOG_ERR, "main: cannot create pipe %s", file_pipe_path);
-            exit(1);
-        }
-
-        struct co_syscall_context *syscall_ctx = co_syscall_initialize(syscall_pipe_path);
-        struct co_file_context *file_ctx = co_file_initialize(file_pipe_path);
+        struct co_syscall_context *syscall_ctx = co_syscall_initialize(syscall_path);
+        struct co_file_context *file_ctx = co_file_initialize(file_path);
 
         while (1) {
         }
     } else {
-        print_help();
+        print_help(argv[0]);
         exit(EXIT_FAILURE);
     }
     syslog(LOG_INFO, "main: initializing server");

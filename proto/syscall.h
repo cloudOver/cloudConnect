@@ -36,7 +36,9 @@ struct co_syscall_data {
 };
 
 struct co_syscall_context {
-    int fifo_fd;
+    void *zmq_ctx;
+    void *zmq_sock;
+
     pthread_mutex_t lock;
     long syscall_id;
     struct co_syscall_data *syscall;

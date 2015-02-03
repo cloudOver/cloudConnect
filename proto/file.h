@@ -20,7 +20,9 @@ struct co_file_data {
 };
 
 struct co_file_context {
-    int fifo_fd;
+    void *zmq_ctx;
+    void *zmq_sock;
+
     pthread_mutex_t lock;
     struct co_file_data *file;
 };
