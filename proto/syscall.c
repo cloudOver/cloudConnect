@@ -24,7 +24,7 @@ struct co_syscall_context* co_syscall_initialize(char *path) {
         return NULL;
     }
 
-    return 0;
+    return ctx;
 }
 
 void co_syscall_cleanup(struct co_syscall_context *ctx) {
@@ -83,6 +83,7 @@ int co_syscall_deserialize(struct co_syscall_context *ctx) {
 
     if (zmq_recv(ctx->zmq_sock, (void *)ctx->syscall, sizeof(struct co_syscall_data), ZMQ_NOBLOCK) != 0) {
         syslog(LOG_DEBUG, "co_syscall_deserialize: no new messages");
+        unlock_and_log("syscall_deserialize", &ctx->lock);
         return -1;
     }
 

@@ -217,6 +217,6 @@ void router_start(struct router_context *ctx) {
     messages += router_file(ctx);
     if (messages == 0) {
         syslog(LOG_DEBUG, "router_start: no messages. sleeping");
-        usleep(10000);
+        sleep(10);
     }
 }

@@ -36,7 +36,9 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    if (strcmp(argv[1], "router") == 0) {
+    co_log_init();
+
+    if (strcmp(argv[1], "clientrouter") == 0) {
         void *mgmt_ctx = zmq_ctx_new();
         void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PULL);
         zmq_bind(mgmt_sock, PIPES_PATH MGMT_PATH);
@@ -76,6 +78,11 @@ int main(int argc, char *argv[]) {
         struct co_syscall_context *syscall_ctx = co_syscall_initialize(syscall_path);
         struct co_file_context *file_ctx = co_file_initialize(file_path);
 
+        if (syscall_ctx == NULL || file_ctx == NULL) {
+            syslog(LOG_CRIT, "main: context is null. Exiting");
+            exit(EXIT_FAILURE);
+        }
+
         // Notify new process
         void *mgmt_ctx = zmq_ctx_new();
         void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PUSH);
@@ -92,6 +99,7 @@ int main(int argc, char *argv[]) {
                 co_syscall_execute(syscall_ctx);
                 co_syscall_serialize(syscall_ctx);
             }
+            sleep(10);
             // TODO: files
         }
     } else {

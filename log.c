@@ -1,7 +1,7 @@
 #include <log.h>
 
 void co_log_init() {
-    openlog("/var/log/cloudover", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+    openlog("/var/log/cloudover", LOG_CONS | LOG_PID | LOG_NDELAY | LOG_PERROR, LOG_LOCAL1);
 }
 
 void lock_and_log(char *lock_name, pthread_mutex_t *mutex) {

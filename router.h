@@ -3,7 +3,7 @@
 
 #include <log.h>
 #include <zmq.h>
-#include <glib/glib.h>
+#include <glib.h>
 
 #include <pthread.h>
 #include <unistd.h>

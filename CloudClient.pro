@@ -12,7 +12,7 @@ CONFIG   -= app_bundle
 
 TEMPLATE = app
 
-INCLUDEPATH += /usr/local/include/ /usr/local/include/glib-2.0/ /usr/local/lib/glib-2.0/include/
+INCLUDEPATH += /usr/local/include/ /usr/include/glib-2.0/ /usr/local/include/glib-2.0/ /usr/local/lib/glib-2.0/include/ /usr/lib/x86_64-linux-gnu/glib-2.0/include/
 
 LIBS += -L/usr/local/lib/ -lzmq -lm -lglib-2.0
 SOURCES += \

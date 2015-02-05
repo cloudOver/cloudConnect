@@ -24,7 +24,7 @@ struct co_file_context *co_file_initialize(char *path) {
         return NULL;
     }
 
-    return 0;
+    return ctx;
 }
 
 
