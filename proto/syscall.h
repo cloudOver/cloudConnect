@@ -73,6 +73,6 @@ extern void co_syscall_serialize(struct co_syscall_context *ctx);
  * @brief co_syscall_deserialize - Unpack system call dara and all params form socket (with direction WRITE or BOTH)
  * @param ctx - co_syscall_context object. Handles pointer to socket and systemcall mutex
  */
-extern void co_syscall_deserialize(struct co_syscall_context *ctx);
+extern int co_syscall_deserialize(struct co_syscall_context *ctx);
 
 #endif // SYSCALL_H

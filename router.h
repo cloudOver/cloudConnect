@@ -3,7 +3,7 @@
 
 #include <log.h>
 #include <zmq.h>
-#include <glib.h>
+#include <glib/glib.h>
 
 #include <pthread.h>
 #include <unistd.h>
@@ -12,6 +12,8 @@
 
 #include <proto/file.h>
 #include <proto/syscall.h>
+
+#define PIPES_PATH "ipc:///tmp/pipes/"
 
 enum router_mgmt_actions {
     MGMT_CREATE,

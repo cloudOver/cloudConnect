@@ -14,8 +14,8 @@ struct router_process *router_process_init(long pid) {
 
 
     char syscall_path[255], file_path[255];
-    sprintf(syscall_path, "ipc:///tmp/pipes/%ld_syscall", pid);
-    sprintf(file_path, "ipc:///tmp/pipes/%ld_file", pid);
+    sprintf(syscall_path, PIPES_PATH "/%ld_syscall", pid);
+    sprintf(file_path, PIPES_PATH "/%ld_file", pid);
 
     ret = zmq_bind(process->syscall_socket, syscall_path);
     if (ret != 0) {

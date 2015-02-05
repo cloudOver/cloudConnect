@@ -78,11 +78,15 @@ void co_syscall_serialize(struct co_syscall_context *ctx) {
 }
 
 
-void co_syscall_deserialize(struct co_syscall_context *ctx) {
+int co_syscall_deserialize(struct co_syscall_context *ctx) {
     lock_and_log("syscall_deserialize", &ctx->lock);
-    ctx->syscall_id += 1;
 
-    zmq_recv(ctx->zmq_sock, (void *)ctx->syscall, sizeof(struct co_syscall_data), 0);
+    if (zmq_recv(ctx->zmq_sock, (void *)ctx->syscall, sizeof(struct co_syscall_data), ZMQ_NOBLOCK) != 0) {
+        syslog(LOG_DEBUG, "co_syscall_deserialize: no new messages");
+        return -1;
+    }
+
+    ctx->syscall_id += 1;
     syslog(LOG_DEBUG, "co_syscall_deserialize: received syscall: %ld", ctx->syscall->syscall_num);
 
     int i;
@@ -98,4 +102,5 @@ void co_syscall_deserialize(struct co_syscall_context *ctx) {
         }
     }
     unlock_and_log("syscall_deserialize", &ctx->lock);
+    return ctx->syscall_id;
 }

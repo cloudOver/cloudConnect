@@ -12,6 +12,8 @@
 #include <proto/file.h>
 #include <router.h>
 
+#define MGMT_PATH "/co_mgmt"
+
 int i_am_running = 1;
 
 void print_help(char *prog_name) {
@@ -37,7 +39,7 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[1], "router") == 0) {
         void *mgmt_ctx = zmq_ctx_new();
         void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PULL);
-        zmq_bind(mgmt_sock, "ipc:///tmp/co_mgmt");
+        zmq_bind(mgmt_sock, PIPES_PATH MGMT_PATH);
 
         struct router_context *ctx = router_initialize(3313, 3323);
         while (i_am_running) {
@@ -65,17 +67,32 @@ int main(int argc, char *argv[]) {
         router_cleanup(ctx);
     } else if (strcmp(argv[1], "plug") == 0) {
         pid_t pid = getpid();
-        char path[] = "/tmp/pipies";
         char syscall_path[256];
         char file_path[256];
-        sprintf(syscall_path, "%s/%d_syscall", path, (int)pid);
-        sprintf(file_path, "%s/%d_file", path, (int)pid);
+        sprintf(syscall_path, PIPES_PATH "/%d_syscall", (int)pid);
+        sprintf(file_path, PIPES_PATH "/%d_file", (int)pid);
 
-
+        // Create syscall and file communication channels
         struct co_syscall_context *syscall_ctx = co_syscall_initialize(syscall_path);
         struct co_file_context *file_ctx = co_file_initialize(file_path);
 
-        while (1) {
+        // Notify new process
+        void *mgmt_ctx = zmq_ctx_new();
+        void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PUSH);
+        zmq_connect(mgmt_sock, PIPES_PATH MGMT_PATH);
+
+        struct router_mgmt mgmt_notify;
+        mgmt_notify.action = MGMT_CREATE;
+        mgmt_notify.pid = pid;
+        mgmt_notify.signal = 0x00;
+        zmq_send(mgmt_sock, (void *)&mgmt_notify, sizeof(struct router_mgmt), 0);
+
+        while (i_am_running) {
+            if (co_syscall_deserialize(syscall_ctx) > 0) {
+                co_syscall_execute(syscall_ctx);
+                co_syscall_serialize(syscall_ctx);
+            }
+            // TODO: files
         }
     } else {
         print_help(argv[0]);
