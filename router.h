@@ -15,6 +15,9 @@
 
 #define PIPES_PATH "ipc:///tmp/pipes/"
 
+#define ROUTER_CLIENT 1
+#define ROUTER_CLOUD 2
+
 enum router_mgmt_actions {
     MGMT_CREATE,
     MGMT_SIGNAL,
@@ -93,7 +96,7 @@ struct router_context {
  * @param file_port Tcp port for incomming connections, for system calls
  * @return Context structure with necessary data for router
  */
-struct router_context* router_initialize(int syscall_port, int file_port);
+struct router_context* router_init(int syscall_port, int file_port, int mode, const char *host);
 
 /**
  * @brief router_start

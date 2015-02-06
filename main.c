@@ -17,7 +17,7 @@
 int i_am_running = 1;
 
 void print_help(char *prog_name) {
-    fprintf(stderr, "Usage: %s [router|plug]", prog_name);
+    fprintf(stderr, "Usage: %s [clientrouter|cloudrouter|plug]\n", prog_name);
 }
 
 void handle_router_sigterm(int signum) {
@@ -38,12 +38,23 @@ int main(int argc, char *argv[]) {
 
     co_log_init();
 
-    if (strcmp(argv[1], "clientrouter") == 0) {
+    if (strcmp(argv[1], "clientrouter") == 0 || strcmp(argv[1], "cloudrouter") == 0) {
         void *mgmt_ctx = zmq_ctx_new();
         void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PULL);
         zmq_bind(mgmt_sock, PIPES_PATH MGMT_PATH);
 
-        struct router_context *ctx = router_initialize(3313, 3323);
+
+        struct router_context *ctx = NULL;
+        if (strcmp(argv[1], "cloudrouter") == 0)
+            router_init(3313, 3323, "*", ROUTER_CLOUD);
+        if (strcmp(argv[1], "clientrouter") == 0)
+            router_init(3313, 3323, argv[2], ROUTER_CLIENT);
+
+        if (ctx == NULL) {
+            print_help(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+
         while (i_am_running) {
             zmq_msg_t msg;
             int ret = 0;
