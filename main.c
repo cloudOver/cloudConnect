@@ -17,7 +17,8 @@
 int i_am_running = 1;
 
 void print_help(char *prog_name) {
-    fprintf(stderr, "Usage: %s [clientrouter|cloudrouter|plug]\n", prog_name);
+    fprintf(stderr, "Usage: %s [plug]\n", prog_name);
+    fprintf(stderr, "\t\t[clientrouter|cloudrouter] address\n", prog_name);
 }
 
 void handle_router_sigterm(int signum) {
@@ -38,22 +39,27 @@ int main(int argc, char *argv[]) {
 
     co_log_init();
 
-    if (strcmp(argv[1], "clientrouter") == 0 || strcmp(argv[1], "cloudrouter") == 0) {
+    if (argc == 3 && (strcmp(argv[1], "clientrouter") == 0 || strcmp(argv[1], "cloudrouter") == 0)) {
         void *mgmt_ctx = zmq_ctx_new();
         void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PULL);
         zmq_bind(mgmt_sock, PIPES_PATH MGMT_PATH);
 
 
         struct router_context *ctx = NULL;
-        if (strcmp(argv[1], "cloudrouter") == 0)
-            router_init(3313, 3323, "*", ROUTER_CLOUD);
-        if (strcmp(argv[1], "clientrouter") == 0)
-            router_init(3313, 3323, argv[2], ROUTER_CLIENT);
+        if (strcmp(argv[1], "cloudrouter") == 0) {
+            syslog(LOG_INFO, "main: initializing cloud router");
+            ctx = router_init(3313, 3323, ROUTER_CLOUD, "*");
+        } else if (strcmp(argv[1], "clientrouter") == 0) {
+            syslog(LOG_INFO, "main: initializing client router");
+            ctx = router_init(3313, 3323, ROUTER_CLIENT, argv[2]);
+        }
 
         if (ctx == NULL) {
             print_help(argv[0]);
             exit(EXIT_FAILURE);
         }
+
+        syslog(LOG_INFO, "main: starting router");
 
         while (i_am_running) {
             zmq_msg_t msg;
@@ -117,14 +123,4 @@ int main(int argc, char *argv[]) {
         print_help(argv[0]);
         exit(EXIT_FAILURE);
     }
-    syslog(LOG_INFO, "main: initializing server");
-    void *zmq_ctx_syscall = zmq_ctx_new();
-    void *zmq_ctx_file = zmq_ctx_new();
-    void *zmq_sock_syscall = zmq_socket(zmq_ctx_syscall, ZMQ_PAIR);
-    void *zmq_file_syscall = zmq_socket(zmq_ctx_file, ZMQ_PAIR);
-
-    syslog(LOG_INFO, "main: binding connections");
-    assert(zmq_bind(zmq_sock_syscall, "tcp://*:3314") == 0);
-    assert(zmq_bind(zmq_sock_syscall, "tcp://*:3315") == 0);
-
 }

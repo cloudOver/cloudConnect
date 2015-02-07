@@ -59,22 +59,45 @@ struct router_context* router_init(int syscall_port, int file_port, int mode, co
 
     ctx->syscall_context = zmq_ctx_new();
     ctx->syscall_socket = zmq_socket(ctx->syscall_context, ZMQ_PAIR);
+
+    if (ctx->syscall_socket == NULL) {
+        syslog(LOG_CRIT, "router_init: failed to create syscall socket");
+        return NULL;
+    }
+
+    syslog(LOG_DEBUG, "router_init: created syscall socket");
+
     char syscall_port_str[256];
     sprintf(syscall_port_str, "tcp://%s:%d", host, syscall_port);
     if (mode == ROUTER_CLIENT) {
         zmq_connect(ctx->syscall_socket, syscall_port_str);
+        syslog(LOG_DEBUG, "router_init: \tconnected");
     } else if (mode == ROUTER_CLOUD) {
         zmq_bind(ctx->syscall_socket, syscall_port_str);
+        syslog(LOG_DEBUG, "router_init: \tserver started");
     }
     //TODO: check ctx_new, socket and bind return codes
 
     ctx->file_context = zmq_ctx_new();
     ctx->file_socket = zmq_socket(ctx->file_context, ZMQ_PAIR);
+
+    if (ctx->syscall_socket == NULL) {
+        syslog(LOG_CRIT, "router_init: failed to create file socket");
+        return NULL;
+    }
+
+    syslog(LOG_DEBUG, "router_init: created file socket");
+
     char file_port_str[256];
-    sprintf(file_port_str, "tcp://*:%d", file_port);
-    zmq_bind(ctx->file_socket, file_port_str);
+    sprintf(file_port_str, "tcp://%s:%d", host, file_port);
+    if (mode == ROUTER_CLIENT) {
+        zmq_connect(ctx->file_socket, file_port_str);
+    } else if (mode == ROUTER_CLOUD) {
+        zmq_bind(ctx->file_socket, file_port_str);
+    }
     //TODO: check ctx_new, socket and bind return codes
 
+    syslog(LOG_DEBUG, "router_init: initializing process list lock");
     if (pthread_mutex_init(&ctx->process_list_lock, NULL) != 0) {
         syslog(LOG_ERR, "router_init: cannot initialize socket list mutex");
         return ctx;
