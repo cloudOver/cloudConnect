@@ -7,7 +7,7 @@ void co_log_init() {
 void lock_and_log(char *lock_name, pthread_mutex_t *mutex) {
     syslog(LOG_INFO, "lock_and_log: locking mutex: %s", lock_name);
     pthread_mutex_lock(mutex);
-    syslog(LOG_DEBUG, "lock_and_log: mutex acquired");
+    syslog(LOG_DEBUG, "lock_and_log: \tmutex acquired");
 }
 
 void unlock_and_log(char *lock_name, pthread_mutex_t *mutex) {

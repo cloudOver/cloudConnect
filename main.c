@@ -32,6 +32,8 @@ void handle_plug_sigterm(int signum) {
 }
 
 int main(int argc, char *argv[]) {
+    int ret;
+
     if (argc < 2) {
         print_help(argv[0]);
         exit(EXIT_FAILURE);
@@ -41,7 +43,7 @@ int main(int argc, char *argv[]) {
 
     if (argc == 3 && (strcmp(argv[1], "clientrouter") == 0 || strcmp(argv[1], "cloudrouter") == 0)) {
         void *mgmt_ctx = zmq_ctx_new();
-        void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PULL);
+        void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PAIR);
         zmq_bind(mgmt_sock, PIPES_PATH MGMT_PATH);
 
 
@@ -63,7 +65,6 @@ int main(int argc, char *argv[]) {
 
         while (i_am_running) {
             zmq_msg_t msg;
-            int ret = 0;
             struct router_mgmt *msg_data;
 
             // Forward messages
@@ -78,7 +79,12 @@ int main(int argc, char *argv[]) {
                     lock_and_log("router_mgmt", &ctx->process_list_lock);
                     struct router_process *process = router_process_init(msg_data->pid);
                     g_list_append(ctx->process_list, &process);
+                    unlock_and_log("router_mgmt", &ctx->process_list_lock);
+                } else {
+                    syslog(LOG_INFO, "main: unknown action from mgmt socket");
                 }
+            } else {
+                syslog(LOG_DEBUG, "main: no mgmt messages");
             }
         }
         zmq_close(mgmt_sock);
@@ -102,8 +108,12 @@ int main(int argc, char *argv[]) {
 
         // Notify new process
         void *mgmt_ctx = zmq_ctx_new();
-        void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PUSH);
-        zmq_connect(mgmt_sock, PIPES_PATH MGMT_PATH);
+        void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PAIR);
+        ret = zmq_connect(mgmt_sock, PIPES_PATH MGMT_PATH);
+        if (ret != 0) {
+            syslog(LOG_CRIT, "main: cannot connect to mgmt socket");
+            exit(EXIT_FAILURE);
+        }
 
         struct router_mgmt mgmt_notify;
         mgmt_notify.action = MGMT_CREATE;

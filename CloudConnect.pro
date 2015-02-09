@@ -6,7 +6,7 @@
 
 QT       -= gui core
 
-TARGET = CloudClient
+TARGET = CloudConnect
 CONFIG   += console
 CONFIG   -= app_bundle
 
