@@ -158,7 +158,7 @@ static int router_file(struct router_context *ctx) {
     zmq_msg_init(&route);
     ret = zmq_recvmsg(ctx->file_socket, &route, ZMQ_NOBLOCK);
 
-    if (ret == 0) {
+    if (ret > 0) {
         syslog(LOG_DEBUG, "router_file: received message from peer router");
         route_data = zmq_msg_data(&route);
         for (l = ctx->process_list; l != NULL; l = l->next) {
@@ -180,7 +180,7 @@ static int router_file(struct router_context *ctx) {
         zmq_msg_init(&msg);
         ret = zmq_recvmsg(((struct router_process*)l->data)->file_socket, &msg, ZMQ_NOBLOCK);
 
-        if (ret == 0) {
+        if (ret > 0) {
             syslog(LOG_DEBUG, "router_file: received message from pid %ld", ((struct router_process*)l->data)->pid);
             router_forward_from_proc(ctx->file_socket, &msg, ((struct router_process*)l->data)->pid);
             forwarded += 1;
@@ -204,7 +204,7 @@ static int router_syscall(struct router_context *ctx) {
     zmq_msg_init(&route);
     ret = zmq_recvmsg(ctx->syscall_socket, &route, ZMQ_NOBLOCK);
 
-    if (ret == 0) {
+    if (ret > 0) {
         syslog(LOG_DEBUG, "router_syscall: received message from peer router");
         route_data = zmq_msg_data(&route);
         for (l = ctx->process_list; l != NULL; l = l->next) {
@@ -226,7 +226,7 @@ static int router_syscall(struct router_context *ctx) {
         zmq_msg_init(&msg);
         ret = zmq_recvmsg(((struct router_process*)l->data)->syscall_socket, &msg, ZMQ_NOBLOCK);
 
-        if (ret == 0) {
+        if (ret > 0) {
             syslog(LOG_DEBUG, "router_syscall: received message from pid %ld", ((struct router_process*)l->data)->pid);
             router_forward_from_proc(ctx->syscall_socket, &msg, ((struct router_process*)l->data)->pid);
             forwarded += 1;

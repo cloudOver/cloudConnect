@@ -73,9 +73,10 @@ int main(int argc, char *argv[]) {
             // Check for new processes
             zmq_msg_init(&msg);
             ret = zmq_recvmsg(mgmt_sock, &msg, ZMQ_NOBLOCK);
-            if (ret == 0) {
+            if (ret > 0) {
                 msg_data = zmq_msg_data(&msg);
                 if (msg_data->action == MGMT_CREATE) {
+                    syslog(LOG_INFO, "main: connecting new process: %ld", msg_data->pid);
                     lock_and_log("router_mgmt", &ctx->process_list_lock);
                     struct router_process *process = router_process_init(msg_data->pid);
                     g_list_append(ctx->process_list, &process);
@@ -84,7 +85,7 @@ int main(int argc, char *argv[]) {
                     syslog(LOG_INFO, "main: unknown action from mgmt socket");
                 }
             } else {
-                syslog(LOG_DEBUG, "main: no mgmt messages");
+                syslog(LOG_DEBUG, "main: no mgmt messages, %d", ret);
             }
         }
         zmq_close(mgmt_sock);
@@ -119,7 +120,8 @@ int main(int argc, char *argv[]) {
         mgmt_notify.action = MGMT_CREATE;
         mgmt_notify.pid = pid;
         mgmt_notify.signal = 0x00;
-        zmq_send(mgmt_sock, (void *)&mgmt_notify, sizeof(struct router_mgmt), 0);
+        ret = zmq_send(mgmt_sock, (void *)&mgmt_notify, sizeof(struct router_mgmt), 0);
+        syslog(LOG_DEBUG, "main: send (new process notification) returned %d", ret);
 
         while (i_am_running) {
             if (co_syscall_deserialize(syscall_ctx) > 0) {
