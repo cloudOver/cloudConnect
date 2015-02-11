@@ -18,7 +18,7 @@ int i_am_running = 1;
 
 void print_help(char *prog_name) {
     fprintf(stderr, "Usage: %s [plug]\n", prog_name);
-    fprintf(stderr, "\t\t[clientrouter|cloudrouter] address\n", prog_name);
+    fprintf(stderr, "\t\t[clientrouter|cloudrouter] address\n");
 }
 
 void handle_router_sigterm(int signum) {
@@ -41,23 +41,18 @@ int main(int argc, char *argv[]) {
 
     co_log_init();
 
-    if (argc == 3 && (strcmp(argv[1], "clientrouter") == 0 || strcmp(argv[1], "cloudrouter") == 0)) {
+    if (argc == 3 && strcmp(argv[1], "router") == 0) {
         void *mgmt_ctx = zmq_ctx_new();
         void *mgmt_sock = zmq_socket(mgmt_ctx, ZMQ_PAIR);
         zmq_bind(mgmt_sock, PIPES_PATH MGMT_PATH);
 
 
         struct router_context *ctx = NULL;
-        if (strcmp(argv[1], "cloudrouter") == 0) {
-            syslog(LOG_INFO, "main: initializing cloud router");
-            ctx = router_init(3313, 3323, ROUTER_CLOUD, "*");
-        } else if (strcmp(argv[1], "clientrouter") == 0) {
-            syslog(LOG_INFO, "main: initializing client router");
-            ctx = router_init(3313, 3323, ROUTER_CLIENT, argv[2]);
-        }
+        syslog(LOG_INFO, "main: initializing client router");
+        ctx = router_init(3313, 3323, "*");
 
         if (ctx == NULL) {
-            print_help(argv[0]);
+            syslog(LOG_CRIT, "main: failed to initialize router");
             exit(EXIT_FAILURE);
         }
 
@@ -76,7 +71,7 @@ int main(int argc, char *argv[]) {
             if (ret > 0) {
                 msg_data = zmq_msg_data(&msg);
                 if (msg_data->action == MGMT_CREATE) {
-                    syslog(LOG_INFO, "main: connecting new process: %ld", msg_data->pid);
+                    syslog(LOG_INFO, "main: connecting new process: %u", msg_data->pid);
                     lock_and_log("router_mgmt", &ctx->process_list_lock);
                     struct router_process *process = router_process_init(msg_data->pid);
                     g_list_append(ctx->process_list, &process);

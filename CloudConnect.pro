@@ -20,11 +20,13 @@ SOURCES += \
     log.c \
     proto/file.c \
     main.c \
-    router.c
+    router.c \
+    forwarder.c
 
 HEADERS += \
     proto/syscall.h \
     log.h \
     proto/file.h \
     router.h \
-    kvec.h
+    kvec.h \
+    forwarder.h

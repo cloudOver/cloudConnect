@@ -15,18 +15,19 @@
 
 #define PIPES_PATH "ipc:///tmp/pipes/"
 
-#define ROUTER_CLIENT 1
-#define ROUTER_CLOUD 2
-
+/**
+ * @brief The router_mgmt_actions enum defines possible management actions for process
+ */
 enum router_mgmt_actions {
     MGMT_CREATE,
     MGMT_SIGNAL,
     MGMT_KILL,
 };
 
+
 struct router_mgmt {
     enum router_mgmt_actions action;
-    long pid;
+    unsigned int pid;
     long signal;
 };
 
@@ -36,7 +37,7 @@ struct router_mgmt {
  * each message and forward to proper process' pipe
  */
 struct router_route {
-    long pid;
+    unsigned int pid;
 };
 
 /**
@@ -44,7 +45,7 @@ struct router_route {
  * objects is handled in router_context structure.
  */
 struct router_process {
-    long pid;
+    unsigned int pid;
 
     void *syscall_context;
     void *syscall_socket;
@@ -96,7 +97,7 @@ struct router_context {
  * @param file_port Tcp port for incomming connections, for system calls
  * @return Context structure with necessary data for router
  */
-struct router_context* router_init(int syscall_port, int file_port, int mode, const char *host);
+struct router_context* router_init(int syscall_port, int file_port, const char *host);
 
 /**
  * @brief router_start

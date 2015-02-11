@@ -50,7 +50,7 @@ void router_process_cleanup(struct router_process *process) {
     free((void *)process);
 }
 
-struct router_context* router_init(int syscall_port, int file_port, int mode, const char *host) {
+struct router_context* router_init(int syscall_port, int file_port, const char *host) {
     struct router_context *ctx = (struct router_context*)malloc(sizeof(struct router_context));
     if (ctx == NULL) {
         syslog(LOG_CRIT, "router_init: cannot allocate memory");
@@ -69,13 +69,8 @@ struct router_context* router_init(int syscall_port, int file_port, int mode, co
 
     char syscall_port_str[256];
     sprintf(syscall_port_str, "tcp://%s:%d", host, syscall_port);
-    if (mode == ROUTER_CLIENT) {
-        zmq_connect(ctx->syscall_socket, syscall_port_str);
-        syslog(LOG_DEBUG, "router_init: \tconnected");
-    } else if (mode == ROUTER_CLOUD) {
-        zmq_bind(ctx->syscall_socket, syscall_port_str);
-        syslog(LOG_DEBUG, "router_init: \tserver started");
-    }
+    zmq_connect(ctx->syscall_socket, syscall_port_str);
+
     //TODO: check ctx_new, socket and bind return codes
 
     ctx->file_context = zmq_ctx_new();
@@ -90,11 +85,7 @@ struct router_context* router_init(int syscall_port, int file_port, int mode, co
 
     char file_port_str[256];
     sprintf(file_port_str, "tcp://%s:%d", host, file_port);
-    if (mode == ROUTER_CLIENT) {
-        zmq_connect(ctx->file_socket, file_port_str);
-    } else if (mode == ROUTER_CLOUD) {
-        zmq_bind(ctx->file_socket, file_port_str);
-    }
+    zmq_connect(ctx->file_socket, file_port_str);
     //TODO: check ctx_new, socket and bind return codes
 
     syslog(LOG_DEBUG, "router_init: initializing process list lock");
@@ -163,7 +154,7 @@ static int router_file(struct router_context *ctx) {
         route_data = zmq_msg_data(&route);
         for (l = ctx->process_list; l != NULL; l = l->next) {
             if (((struct router_process*)l->data)->pid == route_data->pid) {
-                syslog(LOG_DEBUG, "router_forward_msg: \tforwarding message to pid %ld", route_data->pid);
+                syslog(LOG_DEBUG, "router_forward_msg: \tforwarding message to pid %u", route_data->pid);
                 router_forward_to_proc(ctx->file_socket, ((struct router_process*)l->data)->file_socket);
                 forwarded += 1;
                 break;
@@ -181,7 +172,7 @@ static int router_file(struct router_context *ctx) {
         ret = zmq_recvmsg(((struct router_process*)l->data)->file_socket, &msg, ZMQ_NOBLOCK);
 
         if (ret > 0) {
-            syslog(LOG_DEBUG, "router_file: received message from pid %ld", ((struct router_process*)l->data)->pid);
+            syslog(LOG_DEBUG, "router_file: received message from pid %u", ((struct router_process*)l->data)->pid);
             router_forward_from_proc(ctx->file_socket, &msg, ((struct router_process*)l->data)->pid);
             forwarded += 1;
         }
@@ -209,7 +200,7 @@ static int router_syscall(struct router_context *ctx) {
         route_data = zmq_msg_data(&route);
         for (l = ctx->process_list; l != NULL; l = l->next) {
             if (((struct router_process*)l->data)->pid == route_data->pid) {
-                syslog(LOG_DEBUG, "router_forward_msg: \tforwarding message to pid %ld", route_data->pid);
+                syslog(LOG_DEBUG, "router_forward_msg: \tforwarding message to pid %u", route_data->pid);
                 router_forward_to_proc(ctx->syscall_socket, ((struct router_process*)l->data)->syscall_socket);
                 forwarded += 1;
                 break;
@@ -227,7 +218,7 @@ static int router_syscall(struct router_context *ctx) {
         ret = zmq_recvmsg(((struct router_process*)l->data)->syscall_socket, &msg, ZMQ_NOBLOCK);
 
         if (ret > 0) {
-            syslog(LOG_DEBUG, "router_syscall: received message from pid %ld", ((struct router_process*)l->data)->pid);
+            syslog(LOG_DEBUG, "router_syscall: received message from pid %u", ((struct router_process*)l->data)->pid);
             router_forward_from_proc(ctx->syscall_socket, &msg, ((struct router_process*)l->data)->pid);
             forwarded += 1;
         }
