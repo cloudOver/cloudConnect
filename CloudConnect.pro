@@ -29,4 +29,5 @@ HEADERS += \
     proto/file.h \
     router.h \
     kvec.h \
-    forwarder.h
+    forwarder.h \
+    proto/rw.h
