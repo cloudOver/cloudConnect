@@ -143,6 +143,8 @@ int main(int argc, char *argv[]) {
             sleep(10);
             // TODO: files
         }
+    } else if (strcmp(argv[1], "forwarder") == 0) {
+
     } else {
         print_help(argv[0]);
         exit(EXIT_FAILURE);
