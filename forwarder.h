@@ -24,22 +24,20 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <poll.h>
 
 struct co_forward_context {
-    void *zmq_file_ctx;
-    void *zmq_file_sock;
-    void *zmq_syscall_ctx;
-    void *zmq_syscall_sock;
-    int dev_fd_file;
-    int dev_fd_syscall;
+    void *zmq_ctx;
+    void *zmq_sock;
+    int dev_fd;
 };
 
 /**
  * @brief co_forward_init initializez forwarding to cloud kernel mechanisms
  */
-struct co_forward_context *co_forward_init(char *file_addr, char *syscall_addr, char *clouddev_file, char *clouddev_syscall);
+struct co_forward_context *co_forward_init(char *router_addr, char *dev_path);
 
-void co_forward();
+void co_forward(struct co_forward_context *ctx);
 
 void co_forward_cleanup(struct co_forward_context *ctx);
 

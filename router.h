@@ -75,9 +75,10 @@ struct router_process {
  * @brief router_process_init Initializes new router_process structure (sockets, zmq context) for
  * new process
  * @param pid pid of new process
+ * @param name the name of router's socket
  * @return New router_process structure
  */
-struct router_process *router_process_init(long pid);
+struct router_process *router_process_init(long pid, char *name);
 
 
 /**
@@ -91,15 +92,10 @@ void router_process_cleanup(struct router_process *process);
  * @brief The router_context struct - Router's data
  */
 struct router_context {
-    void *syscall_context;
+    void *zmq_ctx;
 
     /// Socket connected with another router, to forward system calls
-    void *syscall_socket;
-
-    void *file_context;
-
-    /// Socket connected with another router, to forward file transfers
-    void *file_socket;
+    void *zmq_sock;
 
     /// List of connected processes
     GList *process_list;
@@ -110,17 +106,17 @@ struct router_context {
 
 /**
  * @brief router_initialize Initialize router
- * @param syscall_port Tcp port for incomming connections, for system calls
- * @param file_port Tcp port for incomming connections, for system calls
+ * @param port Tcp port for incomming connections, for system calls
+ * @param host The host with forwarder
  * @return Context structure with necessary data for router
  */
-struct router_context* router_init(int syscall_port, int file_port, const char *host);
+struct router_context* router_init(int port, const char *host);
 
 /**
- * @brief router_start
+ * @brief router_route
  * @param ctx
  */
-void router_start(struct router_context *ctx);
+void router_route(struct router_context *ctx);
 
 /**
  * @brief router_cleanup Cleanup context structure and close router

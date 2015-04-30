@@ -64,11 +64,13 @@ int main(int argc, char *argv[]) {
         zmq_bind(mgmt_sock, PIPES_PATH MGMT_PATH);
 
 
-        struct router_context *ctx = NULL;
+        struct router_context *router_file = NULL;
+        struct router_context *router_syscall = NULL;
         syslog(LOG_INFO, "main: initializing client router");
-        ctx = router_init(3313, 3323, "*");
+        router_file = router_init(3313, "*");
+        router_syscall = router_init(3323, "*");
 
-        if (ctx == NULL) {
+        if (router_file == NULL || router_syscall) {
             syslog(LOG_CRIT, "main: failed to initialize router");
             exit(EXIT_FAILURE);
         }
