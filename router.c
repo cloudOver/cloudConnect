@@ -25,7 +25,7 @@ struct router_process *router_process_init(long pid, char *name) {
 
     process->zmq_ctx = zmq_ctx_new();
 
-    process->zmq_sock = zmq_socket(process->file_context, ZMQ_PAIR);
+    process->zmq_sock = zmq_socket(process->zmq_ctx, ZMQ_PAIR);
 
     char zmq_process_path[255];
     sprintf(zmq_process_path, PIPES_PATH "/%ld_%s", pid, name);
@@ -42,10 +42,10 @@ struct router_process *router_process_init(long pid, char *name) {
 
 void router_process_cleanup(struct router_process *process) {
     if (process->zmq_sock != NULL)
-        zmq_close(process->file_socket);
+        zmq_close(process->zmq_sock);
 
     if (process->zmq_ctx != NULL)
-        zmq_ctx_destroy(process->file_context);
+        zmq_ctx_destroy(process->zmq_ctx);
 
     free((void *)process);
 }
@@ -76,7 +76,7 @@ struct router_context* router_init(int port, const char *host) {
     syslog(LOG_DEBUG, "router_init: initializing process list lock");
     if (pthread_mutex_init(&ctx->process_list_lock, NULL) != 0) {
         syslog(LOG_ERR, "router_init: cannot initialize socket list mutex");
-        return ctx;
+        return NULL;
     }
     ctx->process_list = NULL;
 
@@ -102,6 +102,7 @@ static void router_forward_to_proc(void *src_sock, void *dest_sock) {
     zmq_msg_init(&msg);
     zmq_recvmsg(src_sock, &msg, 0);
     zmq_sendmsg(dest_sock, &msg, 0);
+    zmq_msg_close(&msg);
 }
 
 
@@ -114,10 +115,11 @@ static void router_forward_from_proc(void *dest_sock, zmq_msg_t *msg, int pid) {
     route_data->pid = pid;
     zmq_sendmsg(dest_sock, &back_route, 0);
     zmq_sendmsg(dest_sock, msg, 0);
+    zmq_msg_close(&back_route);
 }
 
 
-void router_route(struct router_context *ctx) {
+int router_route(struct router_context *ctx) {
 
     zmq_msg_t route;
     struct router_route *route_data;
@@ -137,7 +139,7 @@ void router_route(struct router_context *ctx) {
         for (l = ctx->process_list; l != NULL; l = l->next) {
             if (((struct router_process*)l->data)->pid == route_data->pid) {
                 syslog(LOG_DEBUG, "router_forward_msg: \tforwarding message to pid %u", route_data->pid);
-                router_forward_to_proc(ctx->zmq_sock, ((struct router_process*)l->data)->syscall_socket);
+                router_forward_to_proc(ctx->zmq_sock, ((struct router_process*)l->data)->zmq_sock);
                 forwarded += 1;
                 break;
             }
@@ -151,7 +153,7 @@ void router_route(struct router_context *ctx) {
     for (l = ctx->process_list; l != NULL; l = l->next) {
         zmq_msg_t msg;
         zmq_msg_init(&msg);
-        ret = zmq_recvmsg(((struct router_process*)l->data)->syscall_socket, &msg, ZMQ_NOBLOCK);
+        ret = zmq_recvmsg(((struct router_process*)l->data)->zmq_sock, &msg, ZMQ_NOBLOCK);
 
         if (ret > 0) {
             syslog(LOG_DEBUG, "router_route: received message from pid %u", ((struct router_process*)l->data)->pid);
@@ -161,4 +163,6 @@ void router_route(struct router_context *ctx) {
     }
 
     unlock_and_log("process_list_lock", &ctx->process_list_lock);
+
+    return forwarded;
 }

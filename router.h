@@ -64,11 +64,8 @@ struct router_route {
 struct router_process {
     unsigned int pid;
 
-    void *syscall_context;
-    void *syscall_socket;
-
-    void *file_context;
-    void *file_socket;
+    void *zmq_ctx;
+    void *zmq_sock;
 };
 
 /**
@@ -116,7 +113,7 @@ struct router_context* router_init(int port, const char *host);
  * @brief router_route
  * @param ctx
  */
-void router_route(struct router_context *ctx);
+int router_route(struct router_context *ctx);
 
 /**
  * @brief router_cleanup Cleanup context structure and close router

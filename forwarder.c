@@ -30,16 +30,19 @@ struct co_forward_context *co_forward_init(char *router_addr, char *dev_path) {
 
     ctx->zmq_sock = zmq_socket(ctx->zmq_ctx, ZMQ_PAIR);
     if (ctx->zmq_sock == NULL) {
+        syslog(LOG_CRIT, "forward_init: cannot create socket");
         co_forward_cleanup(ctx);
         return NULL;
     }
 
     //TODO: Check return value
-    zmq_connect(ctx->zmq_sock, router_addr);
+    zmq_bind(ctx->zmq_sock, router_addr);
+    syslog(LOG_DEBUG, "forward_init: forwarder started");
 
     if (dev_path != NULL) {
         ctx->dev_fd = open(dev_path, O_RDWR);
         if (ctx->dev_fd < 0) {
+            syslog(LOG_CRIT, "forward_init: cannot open cloud dev");
             co_forward_cleanup(ctx);
             return NULL;
         }
@@ -59,16 +62,21 @@ void co_forward(struct co_forward_context *ctx) {
     poll(&file, 1, 0);
 
     // Send message to router, if available
+    syslog(LOG_DEBUG, "forward: checking messages from kernel");
     if (file.revents == POLLOUT) {
+        syslog(LOG_DEBUG, "forward: got new messages from kernel");
         msg_size = read(ctx->dev_fd, msg, 1024*1024);
         if (msg_size > 0)
             zmq_send(ctx->zmq_sock, msg, msg_size, 0);
     }
 
     // Receive message from router, if available
+    syslog(LOG_DEBUG, "forward: checking messages from router");
     msg_size = zmq_recv(ctx->zmq_sock, msg, 1024*1024, ZMQ_DONTWAIT);
-    if (msg_size > 0)
+    if (msg_size > 0) {
+        syslog(LOG_DEBUG, "forward: got new mesages from router");
         write(ctx->dev_fd, msg, msg_size);
+    }
 }
 
 void co_forward_cleanup(struct co_forward_context *ctx) {

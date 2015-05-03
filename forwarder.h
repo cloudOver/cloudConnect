@@ -20,6 +20,7 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <glib.h>
 #include <zmq.h>
+#include <log.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
