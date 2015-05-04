@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
         router();
     } else if (argc == 2 && strcmp(argv[1], "plug") == 0) {
         plug();
-    } else if (strcmp(argv[1], "forwarder") == 0) {
+    } else if (argc == 4 && strcmp(argv[1], "forwarder") == 0) {
         forwarder(argv[2], argv[3]);
     } else {
         print_help(argv[0]);

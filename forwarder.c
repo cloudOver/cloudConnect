@@ -53,21 +53,17 @@ struct co_forward_context *co_forward_init(char *router_addr, char *dev_path) {
 
 
 void co_forward(struct co_forward_context *ctx) {
-    struct pollfd file;
     char msg[1024*1024];
     long msg_size;
 
-    file.fd = ctx->dev_fd;
-    file.events = POLLOUT;
-    poll(&file, 1, 0);
-
     // Send message to router, if available
     syslog(LOG_DEBUG, "forward: checking messages from kernel");
-    if (file.revents == POLLOUT) {
-        syslog(LOG_DEBUG, "forward: got new messages from kernel");
-        msg_size = read(ctx->dev_fd, msg, 1024*1024);
-        if (msg_size > 0)
-            zmq_send(ctx->zmq_sock, msg, msg_size, 0);
+    msg_size = read(ctx->dev_fd, msg, 1024*1024);
+    // TODO: Handle -EAGAIN to increase the buffer size
+    if (msg_size > 0) {
+        syslog(LOG_DEBUG, "forward: got new messages from kernel (%d bytes)", msg_size);
+        int ret = zmq_send(ctx->zmq_sock, msg, msg_size, 0);
+        syslog(LOG_DEBUG, "forward: message forwarded. Exit code: %d", ret);
     }
 
     // Receive message from router, if available
