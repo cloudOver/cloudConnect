@@ -36,7 +36,7 @@ struct co_forward_context *co_forward_init(char *router_addr, char *dev_path) {
     }
 
     //TODO: Check return value
-    zmq_bind(ctx->zmq_sock, router_addr);
+    zmq_connect(ctx->zmq_sock, router_addr);
     syslog(LOG_DEBUG, "forward_init: forwarder started");
 
     if (dev_path != NULL) {

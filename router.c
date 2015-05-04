@@ -70,7 +70,7 @@ struct router_context* router_init(int port, const char *host) {
     char zmq_port_str[256];
     sprintf(zmq_port_str, "tcp://%s:%d", host, port);
     syslog(LOG_INFO, "Starting router at %s", zmq_port_str);
-    zmq_connect(ctx->zmq_sock, zmq_port_str);
+    zmq_bind(ctx->zmq_sock, zmq_port_str);
 
     //TODO: check ctx_new, socket and bind return codes
 
