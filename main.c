@@ -87,8 +87,8 @@ static void router() {
         struct router_mgmt *msg_data;
 
         // Forward messages
-        router_route(router_file);
-        router_route(router_syscall);
+        router_start(router_file);
+        router_start(router_syscall);
 
         // Check for new processes
         zmq_msg_init(&msg);
@@ -125,9 +125,9 @@ static void router() {
 /**
  * @brief plug Start plug process as substitute of real process
  */
-void plug() {
+void plug(char *pid_str) {
     int ret;
-    pid_t pid;
+    int pid;
     char syscall_path[256];
     char file_path[256];
     struct co_syscall_context *syscall_ctx;
@@ -136,7 +136,7 @@ void plug() {
     void *mgmt_sock;
     struct router_mgmt mgmt_notify;
 
-    pid = getpid();
+    pid = atoi(pid_str);
 
     sprintf(syscall_path, PIPES_PATH "/%d_syscall", (int)pid);
     sprintf(file_path, PIPES_PATH "/%d_file", (int)pid);
@@ -209,8 +209,8 @@ int main(int argc, char *argv[]) {
 
     if (argc == 2 && strcmp(argv[1], "router") == 0) {
         router();
-    } else if (argc == 2 && strcmp(argv[1], "plug") == 0) {
-        plug();
+    } else if (argc == 3 && strcmp(argv[1], "plug") == 0) {
+        plug(argv[2]);
     } else if (argc == 4 && strcmp(argv[1], "forwarder") == 0) {
         forwarder(argv[2], argv[3]);
     } else {

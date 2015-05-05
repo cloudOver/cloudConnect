@@ -120,7 +120,7 @@ static void router_forward_from_proc(void *dest_sock, zmq_msg_t *msg, int pid) {
 }
 
 
-int router_route(struct router_context *ctx) {
+int router_start(struct router_context *ctx) {
 
     zmq_msg_t route;
     struct router_route *route_data;
@@ -147,7 +147,7 @@ int router_route(struct router_context *ctx) {
         }
 
         if (forwarded == 0)
-            syslog(LOG_WARNING, "router_route: pid not found");
+            syslog(LOG_WARNING, "router_route: pid %d not found", route_data->pid);
     }
 
     // Forward messages from running processes

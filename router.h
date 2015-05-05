@@ -113,7 +113,7 @@ struct router_context* router_init(int port, const char *host);
  * @brief router_route
  * @param ctx
  */
-int router_route(struct router_context *ctx);
+int router_start(struct router_context *ctx);
 
 /**
  * @brief router_cleanup Cleanup context structure and close router
