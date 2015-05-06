@@ -30,6 +30,8 @@ struct router_process *router_process_init(long pid, char *name) {
     char zmq_process_path[255];
     sprintf(zmq_process_path, PIPES_PATH "/%ld_%s", pid, name);
 
+    syslog(LOG_DEBUG, "router_process_init: connecting with process' pipe: %s", zmq_process_path);
+
     ret = zmq_bind(process->zmq_sock, zmq_process_path);
     if (ret != 0) {
         syslog(LOG_ERR, "router_process_init: binding %s socket for pid %ld failed: %d", name, pid, ret);
@@ -99,8 +101,10 @@ void router_cleanup(struct router_context *ctx) {
 
 
 static void router_forward_to_proc(void *dest_sock, void *msg, int size) {
-    syslog(LOG_DEBUG, "Got message at %p with size %d", msg, size);
-    zmq_send(dest_sock, msg, size, 0);
+    int ret;
+    syslog(LOG_DEBUG, "router_fwd_to_proc: got message at %p with size %d", msg, size);
+    ret = zmq_send(dest_sock, msg, size, 0);
+    syslog(LOG_DEBUG, "router_fwd_to_proc: zmq_send returned %d", ret);
 }
 
 
