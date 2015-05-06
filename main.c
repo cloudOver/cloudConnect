@@ -97,14 +97,15 @@ static void router() {
             msg_data = zmq_msg_data(&msg);
             if (msg_data->action == MGMT_CREATE) {
                 syslog(LOG_INFO, "main: connecting new process: %u", msg_data->pid);
+
                 lock_and_log("router_mgmt", &router_syscall->process_list_lock);
                 struct router_process *process_syscall = router_process_init(msg_data->pid, "syscall");
-                g_list_append(router_syscall->process_list, &process_syscall);
+                router_syscall->process_list = g_list_append(router_syscall->process_list, process_syscall);
                 unlock_and_log("router_mgmt", &router_syscall->process_list_lock);
 
                 lock_and_log("router_mgmt", &router_file->process_list_lock);
                 struct router_process *process_file = router_process_init(msg_data->pid, "file");
-                g_list_append(router_file->process_list, &process_file);
+                router_file->process_list = g_list_append(router_file->process_list, process_file);
                 unlock_and_log("router_mgmt", &router_file->process_list_lock);
             } else {
                 syslog(LOG_INFO, "main: unknown action from mgmt socket");
@@ -112,6 +113,7 @@ static void router() {
         } else {
             syslog(LOG_DEBUG, "main: no mgmt messages, %d", ret);
         }
+
         zmq_msg_close(&msg);
         sleep(5);
     }

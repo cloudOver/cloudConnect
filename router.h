@@ -24,6 +24,7 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 #include <signal.h>
 #include <fcntl.h>
 
