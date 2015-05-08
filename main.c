@@ -36,11 +36,15 @@ int i_am_running = 1;
 
 void print_help(char *prog_name) {
     fprintf(stderr, "Usage: %s [plug|router|forwarder]\n", prog_name);
-    fprintf(stderr, "    plug      - imitate process exported to cloud\n");
+    fprintf(stderr, "    plug [pid - imitate process exported to cloud. The pid is\n");
+    fprintf(stderr, "                cloud process'' pid\n");
     fprintf(stderr, "    router    - collect all messages from plug processes and\n");
     fprintf(stderr, "                pass it to/from cloud\n");
     fprintf(stderr, "    forwarder [router url] [cloud dev] - forward messages from\n");
     fprintf(stderr, "                router to the kernel space (kernelConnect module)\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "router url should have ZMQ compatibile format, e.g.:\n");
+    fprintf(stderr, "tcp://10.20.30.40:1234    (NO trailing slash!)\n");
 }
 
 void handle_router_sigterm(int signum) {
