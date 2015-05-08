@@ -31,7 +31,8 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
 #include <proto/file.h>
 #include <proto/syscall.h>
 
-#define PIPES_PATH "ipc:///tmp/pipes/"
+#define PIPES_DIR  "/tmp/pipes"
+#define PIPES_PATH "ipc://" PIPES_DIR "/"
 
 /**
  * @brief The router_mgmt_actions enum defines possible management actions for process

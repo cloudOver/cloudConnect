@@ -55,6 +55,19 @@ void handle_plug_sigterm(int signum) {
 
 
 /**
+ * @brief router_prepare Prepare everything to start router
+ */
+void router_prepare() {
+    DIR *dir = opendir(PIPES_DIR);
+    if (dir)
+        closedir(dir);
+    else
+        mkdir(PIPES_DIR, 0700);
+    perror("router_prepare");
+}
+
+
+/**
  * @brief router start routing process
  */
 static void router() {
@@ -178,6 +191,17 @@ void plug(char *pid_str) {
 }
 
 
+void forwarder_prepare(char *dev_path) {
+    int fd = open(dev_path, O_RDONLY);
+    if (fd < 0) {
+        syslog(LOG_INFO, "forwarder_prepare: creating special device");
+        mknod(dev_path, S_IWUSR | S_IRUSR | S_IFCHR, makedev(109, 0));
+    } else {
+        close(fd);
+    }
+}
+
+
 /**
  * @brief forwarder Start kernel<->router forwarder
  * @param router_url Address of zmq socket in router
@@ -210,10 +234,12 @@ int main(int argc, char *argv[]) {
     co_log_init();
 
     if (argc == 2 && strcmp(argv[1], "router") == 0) {
+        router_prepare();
         router();
     } else if (argc == 3 && strcmp(argv[1], "plug") == 0) {
         plug(argv[2]);
     } else if (argc == 4 && strcmp(argv[1], "forwarder") == 0) {
+        forwarder_prepare(argv[3]);
         forwarder(argv[2], argv[3]);
     } else {
         print_help(argv[0]);

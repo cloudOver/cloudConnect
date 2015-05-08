@@ -126,7 +126,6 @@ static void router_forward_from_proc(void *dest_sock, zmq_msg_t *msg, int pid) {
 
 
 int router_start(struct router_context *ctx) {
-
     zmq_msg_t msg;
     struct router_route *route_info;
     char pipe_path[256];
