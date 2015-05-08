@@ -19,7 +19,9 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
 
 
 struct co_forward_context *co_forward_init(char *router_addr, char *dev_path) {
-    struct co_forward_context *ctx = malloc(sizeof(struct co_forward_context));
+    int ret;
+    struct co_forward_context *ctx;
+    ctx = malloc(sizeof(struct co_forward_context));
     memset(ctx, 0x00, sizeof(struct co_forward_context));
 
     ctx->zmq_ctx = zmq_ctx_new();
@@ -36,8 +38,11 @@ struct co_forward_context *co_forward_init(char *router_addr, char *dev_path) {
     }
 
     //TODO: Check return value
-    zmq_connect(ctx->zmq_sock, router_addr);
-    syslog(LOG_DEBUG, "forward_init: forwarder started");
+    ret = zmq_connect(ctx->zmq_sock, router_addr);
+    if (ret != 0) {
+        perror("co_forward_init: connect to router");
+        co_forward_cleanup(ctx);
+    }
 
     if (dev_path != NULL) {
         ctx->dev_fd = open(dev_path, O_RDWR);

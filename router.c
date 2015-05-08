@@ -72,8 +72,11 @@ struct router_context* router_init(int port, const char *host) {
     char zmq_port_str[256];
     sprintf(zmq_port_str, "tcp://%s:%d", host, port);
     syslog(LOG_INFO, "Starting router at %s", zmq_port_str);
-    zmq_bind(ctx->zmq_sock, zmq_port_str);
+    int ret = zmq_bind(ctx->zmq_sock, zmq_port_str);
 
+    if (ret != 0) {
+        syslog(LOG_CRIT, "router_init: failed to bind router socket. Zmq_bind returned %d", ret);
+    }
     //TODO: check ctx_new, socket and bind return codes
 
     syslog(LOG_DEBUG, "router_init: initializing process list lock");
