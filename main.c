@@ -20,6 +20,7 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>

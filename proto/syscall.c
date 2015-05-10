@@ -18,7 +18,10 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
 #include <proto/syscall.h>
 
 struct co_syscall_context* co_syscall_initialize(char *path) {
-    struct co_syscall_context *ctx = (struct co_syscall_context*) malloc(sizeof(struct co_syscall_context));
+    int ret;
+    struct co_syscall_context *ctx;
+
+    ctx = (struct co_syscall_context*) malloc(sizeof(struct co_syscall_context));
     if (ctx == NULL) {
         syslog(LOG_ERR, "co_syscall_initialize: cannot allocate memory");
         return NULL;
@@ -28,7 +31,12 @@ struct co_syscall_context* co_syscall_initialize(char *path) {
 
     ctx->zmq_ctx = zmq_ctx_new();
     ctx->zmq_sock = zmq_socket(ctx->zmq_ctx, ZMQ_PAIR);
-    zmq_connect(ctx->zmq_sock, path);
+    ret = zmq_connect(ctx->zmq_sock, path);
+    if (ret != 0) {
+        syslog(LOG_CRIT, "co_syscall_initialize: zmq_connect error");
+        perror("zmq_connect");
+        return NULL;
+    }
     syslog(LOG_DEBUG, "co_syscall_initialize: created socket at: %s", path);
     //TODO: check return codes
 
@@ -97,11 +105,14 @@ void co_syscall_serialize(struct co_syscall_context *ctx) {
 
 
 int co_syscall_deserialize(struct co_syscall_context *ctx) {
+    int ret;
     lock_and_log("syscall_deserialize", &ctx->lock);
 
-    if (zmq_recv(ctx->zmq_sock, (void *)ctx->syscall, sizeof(struct co_syscall_data), ZMQ_NOBLOCK) < 0) {
+    ret = zmq_recv(ctx->zmq_sock, (void *)ctx->syscall, sizeof(struct co_syscall_data), ZMQ_NOBLOCK);
+    if (ret < 0) {
         syslog(LOG_DEBUG, "co_syscall_deserialize: no new messages");
         unlock_and_log("syscall_deserialize", &ctx->lock);
+        perror("zmq_recv");
         return -1;
     }
 
