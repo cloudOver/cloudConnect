@@ -85,8 +85,8 @@ static void router() {
     struct router_context *router_file = NULL;
     struct router_context *router_syscall = NULL;
     syslog(LOG_INFO, "main: initializing client routers (file and syscalls)");
+    router_syscall = router_init(3313, "*");
     router_file = router_init(3313, "*");
-    router_syscall = router_init(3323, "*");
 
     if (router_file == NULL) {
         syslog(LOG_CRIT, "main: failed to initialize file router");

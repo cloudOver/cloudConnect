@@ -31,14 +31,13 @@ struct co_syscall_context* co_syscall_initialize(char *path) {
 
     ctx->zmq_ctx = zmq_ctx_new();
     ctx->zmq_sock = zmq_socket(ctx->zmq_ctx, ZMQ_PAIR);
-    ret = zmq_connect(ctx->zmq_sock, path);
+    ret = zmq_bind(ctx->zmq_sock, path);
     if (ret != 0) {
         syslog(LOG_CRIT, "co_syscall_initialize: zmq_connect error");
-        perror("zmq_connect");
+        perror("zmq_bind");
         return NULL;
     }
-    syslog(LOG_DEBUG, "co_syscall_initialize: created socket at: %s", path);
-    //TODO: check return codes
+    syslog(LOG_DEBUG, "co_syscall_initialize: created socket at: %s (%p)", path, ctx->zmq_sock);
 
     ctx->syscall = (struct co_syscall_data*) malloc(sizeof(struct co_syscall_data));
 
@@ -110,7 +109,7 @@ int co_syscall_deserialize(struct co_syscall_context *ctx) {
 
     ret = zmq_recv(ctx->zmq_sock, (void *)ctx->syscall, sizeof(struct co_syscall_data), ZMQ_NOBLOCK);
     if (ret < 0) {
-        syslog(LOG_DEBUG, "co_syscall_deserialize: no new messages");
+        syslog(LOG_DEBUG, "co_syscall_deserialize: no new messages from %p", ctx->zmq_sock);
         unlock_and_log("syscall_deserialize", &ctx->lock);
         perror("zmq_recv");
         return -1;
