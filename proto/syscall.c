@@ -111,7 +111,6 @@ int co_syscall_deserialize(struct co_syscall_context *ctx) {
     if (ret < 0) {
         syslog(LOG_DEBUG, "co_syscall_deserialize: no new messages from %p", ctx->zmq_sock);
         unlock_and_log("syscall_deserialize", &ctx->lock);
-        perror("zmq_recv");
         return -1;
     }
 
