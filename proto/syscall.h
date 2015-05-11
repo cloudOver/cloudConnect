@@ -23,6 +23,7 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <pthread.h>
 
 #define CO_PARAM_COUNT 6
