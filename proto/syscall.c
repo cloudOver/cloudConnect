@@ -88,7 +88,7 @@ void co_syscall_serialize(struct co_syscall_context *ctx) {
     for (i = 0; i < CO_PARAM_COUNT; i++) {
         // Serialize required params (READ and BOTH directions)
         if (ctx->syscall->param_mode[i] == CO_PARAM_READ || ctx->syscall->param_mode[i] == CO_PARAM_BOTH) {
-            syslog(LOG_DEBUG, "co_syscall_serialize: \tsending parameter %d (%ld bytes)", i, ctx->syscall->param_size[i]);
+            syslog(LOG_DEBUG, "co_syscall_serialize: \tsending parameter %d (%ud bytes)", i, ctx->syscall->param_size[i]);
             zmq_send(ctx->zmq_sock, (void*)ctx->syscall->param[i], ctx->syscall->param_size[i], 0);
         }
 
