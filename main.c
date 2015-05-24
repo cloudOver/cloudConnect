@@ -68,7 +68,6 @@ void router_prepare() {
         closedir(dir);
     else
         mkdir(PIPES_DIR, 0700);
-    perror("router_prepare");
 }
 
 
@@ -128,12 +127,10 @@ static void router() {
             } else {
                 syslog(LOG_INFO, "main: unknown action from mgmt socket");
             }
-        } else {
-            syslog(LOG_DEBUG, "main: no mgmt messages, %d", ret);
         }
 
         zmq_msg_close(&msg);
-        sleep(5);
+        sleep(1);
     }
     zmq_close(mgmt_sock);
     zmq_ctx_destroy(mgmt_ctx);
@@ -223,7 +220,7 @@ void forwarder(char *router_url, char *clouddev) {
 
     while (i_am_running) {
         co_forward(ctx);
-        sleep(5);
+        sleep(1);
     }
 
     co_forward_cleanup(ctx);

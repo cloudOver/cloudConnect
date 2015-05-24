@@ -27,6 +27,9 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <poll.h>
 
+#include <router.h>
+#include <proto/syscall.h>
+
 struct co_forward_context {
     void *zmq_ctx;
     void *zmq_sock;

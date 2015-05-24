@@ -37,10 +37,10 @@ along with KernelConnect.  If not, see <http://www.gnu.org/licenses/>.
  * CO_PARAM_VALUE - the parameter is only value (not pointer)
  */
 enum co_syscall_param_mode {
-    CO_PARAM_READ,
-    CO_PARAM_WRITE,
-    CO_PARAM_VALUE,
-    CO_PARAM_BOTH,
+    CO_PARAM_READ = 0x01,
+    CO_PARAM_WRITE = 0x02,
+    CO_PARAM_VALUE = 0x03,
+    CO_PARAM_BOTH = 0x04,
 };
 
 struct co_syscall_data {

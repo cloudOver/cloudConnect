@@ -62,21 +62,25 @@ void co_forward(struct co_forward_context *ctx) {
     long msg_size;
 
     // Send message to router, if available
-    syslog(LOG_DEBUG, "forward: checking messages from kernel");
     msg_size = read(ctx->dev_fd, msg, 1024*1024);
+
     // TODO: Handle -EAGAIN to increase the buffer size
     if (msg_size > 0) {
-        syslog(LOG_DEBUG, "forward: got new messages from kernel (%d bytes)", msg_size);
+        syslog(LOG_INFO, "forward: got new messages from kernel (%d bytes)", msg_size);
         int ret = zmq_send(ctx->zmq_sock, msg, msg_size, 0);
-        syslog(LOG_DEBUG, "forward: message forwarded. Exit code: %d", ret);
+        struct router_route *r_info = msg;
+        struct co_syscall_data *sc_info = msg + sizeof(struct router_route);
+        syslog(LOG_DEBUG, "forward: message forwarded: %d(%d,%d,%d,%d,%d,%d)", sc_info->syscall_num, sc_info->param_mode[0], sc_info->param_mode[1], sc_info->param_mode[2], sc_info->param_mode[3], sc_info->param_mode[4], sc_info->param_mode[5]);
     }
 
     // Receive message from router, if available
-    syslog(LOG_DEBUG, "forward: checking messages from router");
     msg_size = zmq_recv(ctx->zmq_sock, msg, 1024*1024, ZMQ_DONTWAIT);
     if (msg_size > 0) {
-        syslog(LOG_DEBUG, "forward: got new mesages from router");
+        syslog(LOG_INFO, "forward: got new mesages from router");
         write(ctx->dev_fd, msg, msg_size);
+        struct router_route *r_info = msg;
+        struct co_syscall_data *sc_info = msg + sizeof(struct router_route);
+        syslog(LOG_DEBUG, "forward: message forwarded: %d(%d,%d,%d,%d,%d,%d)", sc_info->syscall_num, sc_info->param_mode[0], sc_info->param_mode[1], sc_info->param_mode[2], sc_info->param_mode[3], sc_info->param_mode[4], sc_info->param_mode[5]);
     }
 }
 
